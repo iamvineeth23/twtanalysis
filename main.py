@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
 import pickle
+import argparse
+import os
 
 from keys import (
     api_key,
@@ -58,6 +60,9 @@ class GetTweets:
     
     def __init__(self, api, userid):
         self.userid = userid
+        
+        print('Fetching tweets of: ', self.userid)
+        
         self.tweets = api.user_timeline(screen_name = self.userid, count = 200, include_rts = False, tweet_mode = 'extended')
         self.tweets_dict = defaultdict(list)
 
@@ -71,6 +76,16 @@ class GetTweets:
         return False
 
 
+    def get_hashtags(self, hashtags):
+        
+        tags_list = []
+        
+        for tags in hashtags:
+            tags_list.append(tags['text'])
+    
+        return tags_list
+
+
     def build_dictionary(self):
         
         for status in self.tweets:
@@ -78,11 +93,12 @@ class GetTweets:
             self.tweets_dict['id'].append(status.id_str)
             self.tweets_dict['favourite_count'].append(status.favorite_count)
             self.tweets_dict['created_at'].append(status.created_at)
-            self.tweets_dict['retweeted'].append(status.retweeted)
+            #self.tweets_dict['retweeted'].append(status.retweeted)
             self.tweets_dict['retweet_count'].append(status.retweet_count)
             #self.tweets_dict['is_retweet'].append(self.check_if_retweet(status))
             self.tweets_dict['text'].append(status.full_text)
             
+            self.tweets_dict['tags'].append(self.get_hashtags(status.entities.get('hashtags')))
             tweet_url = 'https://twitter.com/twitter/status/' + status.id_str
             self.tweets_dict['tweet_url'].append(tweet_url)
 
@@ -92,14 +108,19 @@ class GetTweets:
         oldest_id = self.tweets[-1].id
 
         self.build_dictionary()
-        print('Fetching tweets of: ', self.userid)
+        
+        n_tweets = len(self.tweets)
+
         while True:
-            print('Tweets fetched till now {}'.format(len(self.tweets)))
+            
+            print('Tweets fetched till now {}'.format(n_tweets))
+            
             
             self.tweets = api.user_timeline(screen_name = self.userid,
                                             count = 200, include_rts = False,
                                             max_id = oldest_id - 1,
                                             tweet_mode = 'extended')
+            n_tweets += len(self.tweets)
             
             if len(self.tweets)  == 0:
                 break
@@ -112,18 +133,28 @@ class GetTweets:
 
     def save_obj(self, obj, name ):
         
-    with open('data/'+ name + '.pkl', 'wb') as f:
-        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+        with open('data/'+ name + '.pkl', 'wb') as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
         
         
         
-def main():
+def main(USERID):
     
-    
-    USERID = 'elonmusk'
 
     t1 = GetTweets(api, USERID)
     tweets_dict = t1.fetch_tweets()
     t1.save_obj(tweets_dict, USERID)
 
 
+
+if __name__ == "__main__":
+    
+    parser = argparse.ArgumentParser(description='Get statistical analysis on tweeter users')
+    
+    parser.add_argument("-u", "--user", required=False, dest="user",
+                        help="u/user_name to fetch the tweets", metavar="TWT_USER")
+    
+    args = parser.parse_args()
+    user = args.user
+    
+    main(user)
