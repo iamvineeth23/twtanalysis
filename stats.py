@@ -7,11 +7,8 @@ Created on Sat Nov  7 10:37:53 2020
 """
 
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import numpy as np
-import pickle 
 import pandas as pd
-import calendar
 import locale
 import seaborn as sns
 
@@ -73,13 +70,15 @@ class tweet_analyzer:
         fig1 = plt.figure(figsize=(13,10), constrained_layout=True)
 
         gs = fig1.add_gridspec(3, 3)
-        
         f1_ax1 = fig1.add_subplot(gs[0, :])
         plt.plot(self.index, self.df['favourite_count'], linewidth=1.5)
         y_mean = [np.mean(self.df['favourite_count'])]*len(self.index)
         plt.plot(self.index, y_mean, 'g--', label='average', linewidth=1.5)
         f1_ax1.grid(axis='y')    
         f1_ax1.set_title('Favourite over time',  fontsize=12)
+        
+        text = 'Average retweets per tweet: ' + str(int(y_mean[0]))
+        plt.annotate(text, xy=(0, 1), xytext=(12, -12), va='top', xycoords='axes fraction', textcoords='offset points')
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=10)
         
@@ -89,6 +88,8 @@ class tweet_analyzer:
         plt.plot(self.index, y_mean, 'g--', label='average', linewidth=1.5)
         f1_ax2.grid(axis='y')    
         f1_ax2.set_title('Retweet over time',  fontsize=12)
+        text = 'Average retweets per tweet: ' + str(int(y_mean[0]))
+        plt.annotate(text, xy=(0, 1), xytext=(12, -12), va='top', xycoords='axes fraction', textcoords='offset points')
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=10)
         

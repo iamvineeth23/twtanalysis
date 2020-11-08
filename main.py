@@ -29,17 +29,18 @@ api = tweepy.API(auth)
 
 class GetTweets:
     
-    def __init__(self, api, userid):
+    def __init__(self, api, userid, include_rts = False):
         self.userid = userid
+        self.include_rts = include_rts
         
         print('Fetching tweets of: ', self.userid)
         
-        self.tweets = api.user_timeline(screen_name = self.userid, count = 200, include_rts = False, tweet_mode = 'extended')
+        self.tweets = api.user_timeline(screen_name = self.userid, count = 200, include_rts = self.include_rts, tweet_mode = 'extended')
         self.tweets_dict = defaultdict(list)
-
+        self.acc_info = self.tweets[0].user
             
             
-    def check_if_retweet(self, obj):
+    def __check_if_retweet(self, obj):
     
         if hasattr(obj, 'retweeted_status'):
             return True
@@ -47,7 +48,7 @@ class GetTweets:
         return False
 
 
-    def get_hashtags(self, hashtags):
+    def __get_hashtags(self, hashtags):
         
         tags_list = []
         
@@ -57,28 +58,43 @@ class GetTweets:
         return tags_list
 
 
-    def build_dictionary(self):
+    def __get_account_info(self):
+        
+        twt = self.acc_info
+        
+        print(f'\n \nName:\t {twt.name}')
+        print(f'Description: {twt.description}' )
+        print(f'Followers: {twt.followers_count}\t Follwing: {twt.friends_count}' )
+        print(f'Account created on: {twt.created_at}\t Location: {twt.location}\n')
+        
+        with open("data/info" + self.userid, "w") as text_file:
+            text_file.write(f'Name: {twt.name}\n Description: {twt.description}\n \
+                            Followers: {twt.followers_count}\t Follwing: {twt.friends_count}\n \
+                            Account created on: {twt.created_at}\t Location: {twt.location}')
+    
+        
+    def __build_dictionary(self):
         
         for status in self.tweets:
 
             self.tweets_dict['id'].append(status.id_str)
             self.tweets_dict['favourite_count'].append(status.favorite_count)
             self.tweets_dict['created_at'].append(status.created_at)
-            #self.tweets_dict['retweeted'].append(status.retweeted)
             self.tweets_dict['retweet_count'].append(status.retweet_count)
-            #self.tweets_dict['is_retweet'].append(self.check_if_retweet(status))
             self.tweets_dict['tweet'].append(status.full_text)
+            self.tweets_dict['tags'].append(self.__get_hashtags(status.entities.get('hashtags')))
             
-            self.tweets_dict['tags'].append(self.get_hashtags(status.entities.get('hashtags')))
             tweet_url = 'https://twitter.com/twitter/status/' + status.id_str
             self.tweets_dict['tweet_url'].append(tweet_url)
-
+            
+            if not self.include_rts:
+                self.tweets_dict['is_retweet'].append(self.__check_if_retweet(status))
 
     def fetch_tweets(self):
 
         oldest_id = self.tweets[-1].id
 
-        self.build_dictionary()
+        self.__build_dictionary()
         
         n_tweets = len(self.tweets)
 
@@ -97,12 +113,13 @@ class GetTweets:
                 break
             
             oldest_id = self.tweets[-1].id
-            self.build_dictionary()
+            self.__build_dictionary()
         
+        self.__get_account_info()
         return pd.DataFrame.from_dict(self.tweets_dict) 
 
 
-    def save_obj(self, df, name ):
+    def save_obj(self, df, name):
         
         df.to_csv('data/'+ name + '.csv', index=False)
                 
