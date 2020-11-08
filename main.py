@@ -8,12 +8,10 @@ Created on Sun Nov  1 18:25:21 2020
 
 import tweepy
 from collections import defaultdict
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import numpy as np
-import pickle
+import pandas as pd
 import argparse
 import os
+from stats import tweet_analyzer
 
 from keys import (
     api_key,
@@ -23,38 +21,11 @@ from keys import (
 )
 
 
-
-def check_if_retweet(obj):
-    
-    if hasattr(obj, 'retweeted_status'):
-        return True
-    
-    return False
-
-# %matplotlib qt
-def plot_stats(tweets_dict):
-    
-    fig, ax = plt.subplots(1)
-    fig.autofmt_xdate()
-    
-    plt.plot(tweets_dict['created_at'], tweets_dict['favourite_count'], 'ko', tweets_dict['created_at'], tweets_dict['favourite_count'])
-    y_mean = [np.mean(tweets_dict['favourite_count'])]*len(tweets_dict['created_at'])
-    plt.plot(tweets_dict['created_at'], y_mean, 'b--')
-    xfmt = mdates.DateFormatter('%d-%m-%y')
-    
-    ax.xaxis.set_major_formatter(xfmt)
-
-    plt.show()
-
-
-        
 auth = tweepy.OAuthHandler(api_key, api_secret_key)
 auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
 
-
-    
 
 class GetTweets:
     
@@ -96,7 +67,7 @@ class GetTweets:
             #self.tweets_dict['retweeted'].append(status.retweeted)
             self.tweets_dict['retweet_count'].append(status.retweet_count)
             #self.tweets_dict['is_retweet'].append(self.check_if_retweet(status))
-            self.tweets_dict['text'].append(status.full_text)
+            self.tweets_dict['tweet'].append(status.full_text)
             
             self.tweets_dict['tags'].append(self.get_hashtags(status.entities.get('hashtags')))
             tweet_url = 'https://twitter.com/twitter/status/' + status.id_str
@@ -128,23 +99,24 @@ class GetTweets:
             oldest_id = self.tweets[-1].id
             self.build_dictionary()
         
-        return self.tweets_dict
+        return pd.DataFrame.from_dict(self.tweets_dict) 
 
 
-    def save_obj(self, obj, name ):
+    def save_obj(self, df, name ):
         
-        with open('data/'+ name + '.pkl', 'wb') as f:
-            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-        
+        df.to_csv('data/'+ name + '.csv', index=False)
+                
         
         
 def main(USERID):
     
 
     t1 = GetTweets(api, USERID)
-    tweets_dict = t1.fetch_tweets()
-    t1.save_obj(tweets_dict, USERID)
-
+    tweets_df = t1.fetch_tweets()
+    t1.save_obj(tweets_df, USERID)
+    
+    analyzer = tweet_analyzer(tweets_df, plot=True)
+    analyzer.get_stats()
 
 
 if __name__ == "__main__":
@@ -157,4 +129,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     user = args.user
     
+    if not (os.path.isdir('data')):
+        os.mkdir('data') 
+        
+        
     main(user)
