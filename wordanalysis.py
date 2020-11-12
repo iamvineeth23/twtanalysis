@@ -94,7 +94,7 @@ class WordsAnalysis:
         plt.imshow(wordcloud, interpolation="bilinear")
         plt.axis("off")
         plt.savefig('data/' + name + '.png', dpi=300)
-        plt.show()
+        plt.show(block=False)
         
     
     def analyse(self):

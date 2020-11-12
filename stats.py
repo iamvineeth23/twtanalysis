@@ -115,7 +115,7 @@ class tweet_analyzer:
         f1_ax5.set_xlabel('')
         
         fig1.savefig('data/stats.png', dpi=300)
-        plt.show(block=True)
+        plt.show(block=False)
 
     def get_stats(self):
         
