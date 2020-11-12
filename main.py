@@ -12,6 +12,7 @@ import pandas as pd
 import argparse
 import os
 from stats import tweet_analyzer
+from wordanalysis import WordsAnalysis
 
 from keys import (
     api_key,
@@ -134,6 +135,9 @@ def main(USERID):
     
     analyzer = tweet_analyzer(tweets_df, plot=True)
     analyzer.get_stats()
+    
+    wa = WordsAnalysis(tweets_df)
+    wa.analyse()
 
 
 if __name__ == "__main__":
