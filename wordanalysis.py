@@ -22,13 +22,15 @@ class WordsAnalysis:
         
         self.df = df        
         
-
     def __count_tags(self):
         
         all_tags = []
         for a in self.df['tags']:
-    
-            all_tags.extend(literal_eval(a))
+            
+            if isinstance(a, str): #needed when reading from csv
+                a = literal_eval(a)
+            
+            all_tags.extend(a)
         
         
         self.tag_count = Counter(all_tags)
@@ -108,11 +110,4 @@ class WordsAnalysis:
 if __name__ == "__main__":
     pass
 
-        
-# import pandas as pd
-
-# df = pd.read_csv('data/isro.csv')
-
-# wa = WordsAnalysis(df)
-# wa.analyse()
 
